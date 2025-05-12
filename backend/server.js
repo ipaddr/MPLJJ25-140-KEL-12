@@ -1,16 +1,32 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const db = require('./config/firebaseConfig');
-
-dotenv.config();
+const bodyParser = require('body-parser');
+const { sendOtp, verifyOtp, updateUserProfile, logoutUser, deleteUser, getUserProfile } = require('../controllers/authController');
 
 const app = express();
+
+// Middleware untuk parsing JSON request body
+app.use(bodyParser.json());
+
+// Endpoint untuk mengirim OTP
+app.post('/send-otp', sendOtp);
+
+// Endpoint untuk verifikasi OTP
+app.post('/verify-otp', verifyOtp);
+
+// Endpoint untuk update profil pengguna
+app.put('/update-profile', updateUserProfile);
+
+// Endpoint untuk logout pengguna
+app.post('/logout', logoutUser);
+
+// Endpoint untuk menghapus pengguna
+app.delete('/delete-user', deleteUser);
+
+// Endpoint untuk mengambil profil pengguna
+app.get('/user-profile/:uid', getUserProfile);
+
+// Menjalankan server
 const PORT = process.env.PORT || 5000;
-
-app.get('/', (req, res) => {
-    res.send('GajiNaik Backend is Running');
-});
-
 app.listen(PORT, () => {
-    console.log("Server is running on port ${PORT}");
+  console.log(`Server running on port ${PORT}`);
 });
