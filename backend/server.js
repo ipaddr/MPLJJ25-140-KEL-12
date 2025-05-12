@@ -1,37 +1,16 @@
-const app = require('./app');
-const { logger } = require('./utils/logger');
-const { initializeFirebase } = require('./services/firebaseService');
+const express = require('express');
+const dotenv = require('dotenv');
+const db = require('./config/firebaseConfig');
 
-const PORT = process.env.PORT || 3000;
+dotenv.config();
 
-// Initialize services
-const initializeServer = async () => {
-  try {
-    // Initialize Firebase
-    await initializeFirebase();
-    logger.info('Firebase initialized successfully');
-    
-    // Start server
-    app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    logger.error('Failed to initialize server:', error);
-    process.exit(1);
-  }
-};
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.error('UNCAUGHT EXCEPTION! Shutting down...', err);
-  process.exit(1);
+app.get('/', (req, res) => {
+    res.send('GajiNaik Backend is Running');
 });
 
-// Handle unhandled rejections
-process.on('unhandledRejection', (err) => {
-  logger.error('UNHANDLED REJECTION! Shutting down...', err);
-  process.exit(1);
+app.listen(PORT, () => {
+    console.log("Server is running on port ${PORT}");
 });
-
-// Initialize the server
-initializeServer();
