@@ -1,43 +1,43 @@
-const { admin, db } = require('../firebaseConfig'); // Mengimpor Firebase Admin SDK untuk Firestore
-const firebase = require('firebase');
+const admin = require('firebase-admin'); // Menggunakan Firebase Admin SDK
+const { db } = require('../config/firebaseConfig'); // Mengimpor Firebase Admin SDK untuk Firestore
 require('firebase/auth');
 
-// Fungsi untuk mengirim OTP (One-Time Password)
-const sendOtp = (req, res) => {
-  const phoneNumber = req.body.phoneNumber; // Ambil nomor ponsel dari request
-  const appVerifier = req.body.recaptchaVerifier; // Verifier reCAPTCHA (untuk keamanan)
+// Inisialisasi Firebase Admin SDK jika belum diinisialisasi
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(require('../config/serviceAccountKey.json')), // File Service Account Key yang didapat dari Firebase Console
+  });
+}
 
-  firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
-    .then((confirmationResult) => {
-      // Kirimkan verificationId ke pengguna
-      res.status(200).json({
-        success: true,
-        verificationId: confirmationResult.verificationId
-      });
-    })
-    .catch((error) => {
-      console.error('Error sending OTP: ', error);
-      res.status(500).json({ success: false, message: error.message });
-    });
+// Fungsi untuk mengirim OTP (Note: ini hanya dapat dilakukan di frontend menggunakan Firebase SDK)
+const sendOtp = (req, res) => {
+  res.status(500).json({ message: "OTP must be handled on the frontend with Firebase SDK" });
 };
 
 // Fungsi untuk memverifikasi OTP yang dimasukkan oleh pengguna
 const verifyOtp = (req, res) => {
-  const verificationId = req.body.verificationId; // verificationId dari proses kirim OTP
+  // Ambil verificationId dan OTP yang dikirim dari frontend
+  const verificationId = req.body.verificationId; // verificationId dari proses kirim OTP di frontend
   const otp = req.body.otp;  // OTP yang dimasukkan pengguna
+  
+  // Pastikan verificationId dan OTP ada di request body
+  if (!verificationId || !otp) {
+    return res.status(400).json({ success: false, message: "Verification ID and OTP are required" });
+  }
 
-  // Buat credential dari OTP yang dimasukkan
-  const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, otp);
+  // Membuat kredensial dengan menggunakan OTP yang dimasukkan
+  const credential = admin.auth.PhoneAuthProvider.credential(verificationId, otp);
 
-  // Verifikasi credential menggunakan Firebase Authentication
-  firebase.auth().signInWithCredential(credential)
+  // Verifikasi kredensial menggunakan Firebase Authentication
+  admin.auth().signInWithCredential(credential)
     .then((userCredential) => {
       // Jika berhasil, dapatkan data pengguna
       const user = userCredential.user;
-      
-      // Simpan data pengguna ke Firestore
+
+      // Menambahkan pengguna ke Firestore setelah berhasil login
       addUserToFirestore(user);
 
+      // Mengirimkan respons sukses dengan data pengguna
       res.status(200).json({
         success: true,
         message: 'OTP Verified!',
@@ -51,6 +51,13 @@ const verifyOtp = (req, res) => {
     })
     .catch((error) => {
       console.error('Error verifying OTP: ', error);
+
+      // Menangani error jika OTP tidak valid
+      if (error.code === 'auth/invalid-verification-code') {
+        return res.status(400).json({ success: false, message: 'Invalid OTP code' });
+      }
+
+      // Menangani error lainnya
       res.status(500).json({ success: false, message: error.message });
     });
 };
@@ -60,11 +67,10 @@ const addUserToFirestore = (user) => {
   const userRef = db.collection('users').doc(user.uid);
 
   userRef.set({
-    name: user.displayName || 'No Name',
-    email: user.email || 'No Email',
-    phoneNumber: user.phoneNumber,
-    createdAt: new Date(),
-    // Kamu bisa menambahkan lebih banyak data di sini sesuai kebutuhan
+    name: user.displayName || 'No Name',  // Jika nama tidak ada, set ke 'No Name'
+    email: user.email || 'No Email',      // Jika email tidak ada, set ke 'No Email'
+    phoneNumber: user.phoneNumber,        // Menyimpan nomor telepon pengguna
+    createdAt: new Date(),                // Menyimpan waktu pembuatan pengguna
   })
   .then(() => {
     console.log('User added to Firestore!');
@@ -98,7 +104,7 @@ const updateUserProfile = (req, res) => {
 
 // Fungsi untuk logout pengguna
 const logoutUser = (req, res) => {
-  firebase.auth().signOut()
+  admin.auth().signOut()
     .then(() => {
       res.status(200).json({ success: true, message: 'User logged out successfully.' });
     })
@@ -111,7 +117,7 @@ const logoutUser = (req, res) => {
 // Fungsi untuk menghapus pengguna dari Firestore
 const deleteUser = (req, res) => {
   const uid = req.body.uid;
-  
+
   // Hapus user dari Firestore
   const userRef = db.collection('users').doc(uid);
   userRef.delete()
