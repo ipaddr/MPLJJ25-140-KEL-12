@@ -16,22 +16,20 @@ const sendOtp = (req, res) => {
 
 // Fungsi untuk memverifikasi OTP yang dimasukkan oleh pengguna
 const verifyOtp = (req, res) => {
-  // Ambil verificationId dan OTP yang dikirim dari frontend
-  const verificationId = req.body.verificationId; // verificationId dari proses kirim OTP di frontend
+  const verificationId = req.body.verificationId; // verificationId dari frontend
   const otp = req.body.otp;  // OTP yang dimasukkan pengguna
-  
-  // Pastikan verificationId dan OTP ada di request body
+
   if (!verificationId || !otp) {
     return res.status(400).json({ success: false, message: "Verification ID and OTP are required" });
   }
 
-  // Membuat kredensial dengan menggunakan OTP yang dimasukkan
+  // Di sini, kita hanya menerima OTP dan verifikasi dilakukan di frontend
+  // Simulasi verifikasi
   const credential = admin.auth.PhoneAuthProvider.credential(verificationId, otp);
 
   // Verifikasi kredensial menggunakan Firebase Authentication
   admin.auth().signInWithCredential(credential)
     .then((userCredential) => {
-      // Jika berhasil, dapatkan data pengguna
       const user = userCredential.user;
 
       // Menambahkan pengguna ke Firestore setelah berhasil login
@@ -51,17 +49,9 @@ const verifyOtp = (req, res) => {
     })
     .catch((error) => {
       console.error('Error verifying OTP: ', error);
-
-      // Menangani error jika OTP tidak valid
-      if (error.code === 'auth/invalid-verification-code') {
-        return res.status(400).json({ success: false, message: 'Invalid OTP code' });
-      }
-
-      // Menangani error lainnya
       res.status(500).json({ success: false, message: error.message });
     });
 };
-
 // Fungsi untuk menambahkan pengguna ke Firestore
 const addUserToFirestore = (user) => {
   const userRef = db.collection('users').doc(user.uid);
