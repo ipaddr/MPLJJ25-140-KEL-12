@@ -1,23 +1,39 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { sendOtp, verifyOtp, logoutUser, deleteUser, } = require('./controllers/authController');
+const { registerUser, loginUser, logoutUser } = require('./controllers/authController');  // Sesuaikan import dengan controller Anda
 const app = express();
+const jwtVerify = require('./middlewares/jwtVerify'); 
+const { registerAdmin, loginAdmin, inputDashboardData } = require('./controllers/adminController'); 
+require('dotenv').config();  // Menambahkan baris ini untuk mengimpor variabel .env
+
+// Endpoint yang dilindungi, hanya bisa diakses jika user sudah login
+app.get('/protected', jwtVerify, (req, res) => {
+  res.status(200).json({
+    message: 'Akses berhasil, Anda telah login',
+    userId: req.user.nik
+  });
+});
 
 // Middleware untuk parsing JSON request body
 app.use(bodyParser.json());
 
-// Endpoint untuk mengirim OTP
-app.post('/send-otp', sendOtp);
+// Endpoint untuk register pengguna
+app.post('/register', registerUser);
 
-// Endpoint untuk verifikasi OTP
-app.post('/verify-otp', verifyOtp);
-
+// Endpoint untuk login pengguna
+app.post('/login', loginUser);
 
 // Endpoint untuk logout pengguna
 app.post('/logout', logoutUser);
 
-// Endpoint untuk menghapus pengguna
-app.delete('/delete-user', deleteUser);
+// Endpoint untuk input data dashboard (hanya bisa diakses admin)
+app.post('/admin/dashboard', jwtVerify, inputDashboardData);
+
+// Endpoint untuk login admin
+app.post('/admin/login', loginAdmin);
+
+// Endpoint untuk register admin
+app.post('/admin/register', registerAdmin);
 
 // Menjalankan server
 const PORT = process.env.PORT || 5000;
