@@ -4,7 +4,8 @@ const { registerUser, loginUser, logoutUser } = require('./controllers/authContr
 const app = express();
 const jwtVerify = require('./middlewares/jwtVerify'); 
 const { registerAdmin, loginAdmin, inputDashboardData } = require('./controllers/adminController'); 
-require('dotenv').config();  // Menambahkan baris ini untuk mengimpor variabel .env
+const profileRoute = require('./routes/profileRoute');
+require('dotenv').config(); 
 
 // Endpoint yang dilindungi, hanya bisa diakses jika user sudah login
 app.get('/protected', jwtVerify, (req, res) => {
@@ -34,6 +35,9 @@ app.post('/admin/login', loginAdmin);
 
 // Endpoint untuk register admin
 app.post('/admin/register', registerAdmin);
+
+// Gunakan routing untuk profile
+app.use('/api', profileRoute);
 
 // Menjalankan server
 const PORT = process.env.PORT || 5000;
