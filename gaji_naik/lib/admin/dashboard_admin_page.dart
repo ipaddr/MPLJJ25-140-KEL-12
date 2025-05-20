@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gaji_naik/admin/manage_education_page.dart';
 import 'package:gaji_naik/admin/manage_report_page.dart';
 import 'package:gaji_naik/admin/simulasi_gaji_admin_page.dart';
-import 'add_instansi_page.dart'; // Import AddInstansiPage
+import 'add_instansi_page.dart'; 
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
