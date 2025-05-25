@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:gaji_naik/admin/dashboard_admin_page.dart';
 import 'package:gaji_naik/user/onboarding_page.dart';
-import '../user/dashboard_user.dart'; // Import the dashboard file
 
-
-class AdminLoginPage extends StatelessWidget {
+class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
+
+  @override
+  State<AdminLoginPage> createState() => _AdminLoginPageState();
+}
+
+class _AdminLoginPageState extends State<AdminLoginPage> {
+  final TextEditingController _userController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _userController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +31,6 @@ class AdminLoginPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Navigasi kembali ke halaman onboarding
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const OnboardingPage()),
@@ -28,10 +41,11 @@ class AdminLoginPage extends StatelessWidget {
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                // Logo + Title
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -40,69 +54,114 @@ class AdminLoginPage extends StatelessWidget {
                       width: 50,
                       height: 50,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     const Text(
                       'GajiNaik',
                       style: TextStyle(
-                        fontSize: 30,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
+
+                // ASN Logo
                 Image.asset(
                   'assets/logoASN.png',
                   width: 200,
                   height: 150,
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
+
+                // User input field
                 TextField(
+                  controller: _userController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'NIP/NIK/Email',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withOpacity(0.15),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                      borderRadius: BorderRadius.circular(12.0),
                       borderSide: BorderSide.none,
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: BorderSide(color: Colors.white70),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.emailAddress,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+
+                // Password input field with toggle
                 TextField(
-                  obscureText: true,
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withOpacity(0.15),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                      borderRadius: BorderRadius.circular(12.0),
                       borderSide: BorderSide.none,
                     ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  // Navigate to the dashboard page after login (simulated)
-                  onPressed: () {
-Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboardPage()));
-                    // TODO: Implement login logic
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: BorderSide(color: Colors.white70),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                  child: const Text(
-                    'Masuk',
-                    style: TextStyle(fontSize: 18, color: Color.fromARGB(255, 0, 0, 0)),
+                ),
+                const SizedBox(height: 40),
+
+                // Login button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+                      );
+                      // TODO: Implement login logic
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      elevation: 5,
+                      shadowColor: Colors.white54,
+                    ),
+                    child: const Text(
+                      'Masuk',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Color.fromARGB(255, 10, 31, 164),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
                   ),
                 ),
               ],

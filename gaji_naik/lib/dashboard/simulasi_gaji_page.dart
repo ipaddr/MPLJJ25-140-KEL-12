@@ -11,7 +11,14 @@ class _SimulasiGajiPageState extends State<SimulasiGajiPage> {
   String? selectedInstansi;
   String? selectedPangkat;
 
-  final List<String> instansiOptions = ['Guru', 'Dosen', 'Dokter', 'TNI', 'POLRI', 'Lainnya'];
+  final List<String> instansiOptions = [
+    'Guru',
+    'Dosen',
+    'Dokter',
+    'TNI',
+    'POLRI',
+    'Lainnya'
+  ];
   final List<String> pangkatOptions = [
     'Penata muda (III/a)',
     'Penata muda tingkat I (III/b)',
@@ -24,16 +31,30 @@ class _SimulasiGajiPageState extends State<SimulasiGajiPage> {
     'Pembina utama (IV/e)',
   ];
 
+  final TextEditingController sebelumGajiPokokController = TextEditingController();
+  final TextEditingController sebelumTunjanganController = TextEditingController();
+  final TextEditingController sesudahGajiPokokController = TextEditingController();
+  final TextEditingController sesudahTunjanganController = TextEditingController();
+
+  @override
+  void dispose() {
+    sebelumGajiPokokController.dispose();
+    sebelumTunjanganController.dispose();
+    sesudahGajiPokokController.dispose();
+    sesudahTunjanganController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    const borderRadius = BorderRadius.all(Radius.circular(12));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Simulasi Gaji Baru'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
@@ -51,167 +72,97 @@ class _SimulasiGajiPageState extends State<SimulasiGajiPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Text(
-                'Instansi',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            children: [
+              const Text('Instansi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: selectedInstansi,
                 hint: const Text('Pilih Instansi'),
-                items: instansiOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: borderRadius),
+                ),
+                items: instansiOptions
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) {
                   setState(() {
-                    selectedInstansi = newValue;
+                    selectedInstansi = val;
                   });
                 },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Pangkat',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const SizedBox(height: 24),
+              const Text('Pangkat',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: selectedPangkat,
                 hint: const Text('Pilih Pangkat'),
-                items: pangkatOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: borderRadius),
+                ),
+                items: pangkatOptions
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) {
                   setState(() {
-                    selectedPangkat = newValue;
+                    selectedPangkat = val;
                   });
                 },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sebelum kenaikan',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Card(
-                          elevation: 2.0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Gaji pokok',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Tunjangan',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: _buildSalaryCard(
+                      title: 'Sebelum kenaikan',
+                      gajiPokokController: sebelumGajiPokokController,
+                      tunjanganController: sebelumTunjanganController,
                     ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sesudah kenaikan',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Card(
-                          elevation: 2.0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Gaji pokok',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Tunjangan',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: _buildSalaryCard(
+                      title: 'Sesudah kenaikan',
+                      gajiPokokController: sesudahGajiPokokController,
+                      tunjanganController: sesudahTunjanganController,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               Center(
                 child: ElevatedButton(
                   onPressed: () {
                     // TODO: Implement hitung logic
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.yellow,
-                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
+                      borderRadius: BorderRadius.circular(30),
                     ),
+                    elevation: 6,
+                    shadowColor: Colors.amber.shade200,
+                    backgroundColor: Colors.yellow[700],
                   ),
                   child: const Text(
                     'Hitung',
-                    style: TextStyle(fontSize: 18, color: Colors.black),
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ),
               ),
@@ -219,6 +170,57 @@ class _SimulasiGajiPageState extends State<SimulasiGajiPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSalaryCard({
+    required String title,
+    required TextEditingController gajiPokokController,
+    required TextEditingController tunjanganController,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  controller: gajiPokokController,
+                  decoration: InputDecoration(
+                    labelText: 'Gaji pokok',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: tunjanganController,
+                  decoration: InputDecoration(
+                    labelText: 'Tunjangan',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

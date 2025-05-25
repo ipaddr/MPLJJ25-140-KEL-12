@@ -8,12 +8,11 @@ class SimulasiGajiAdminPage extends StatefulWidget {
 }
 
 class _SimulasiGajiAdminPageState extends State<SimulasiGajiAdminPage> {
-  String? _selectedInstansi; // For the dropdown
+  String? _selectedInstansi;
   final TextEditingController _golonganController = TextEditingController();
   final TextEditingController _jabatanController = TextEditingController();
   final TextEditingController _rumusController = TextEditingController();
 
-  // Example data for dropdowns, replace with actual data source
   final List<String> _instansiOptions = ['Instansi A', 'Instansi B', 'Instansi C'];
 
   @override
@@ -25,7 +24,6 @@ class _SimulasiGajiAdminPageState extends State<SimulasiGajiAdminPage> {
   }
 
   void _saveSimulasi() {
-    // TODO: Implement save simulasi logic here
     String? instansi = _selectedInstansi;
     String golongan = _golonganController.text;
     String jabatan = _jabatanController.text;
@@ -36,116 +34,133 @@ class _SimulasiGajiAdminPageState extends State<SimulasiGajiAdminPage> {
     print('  Golongan: $golongan');
     print('  Jabatan: $jabatan');
     print('  Rumus: $rumus');
-
-    // Add your logic to save the data (e.g., call an API)
+    // Implementasi simpan data di sini
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Simulasi Gaji Admin'),
+        title: const Text(
+          'Simulasi Gaji Admin',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.home),
+            icon: const Icon(Icons.home_outlined),
             onPressed: () {
-              // TODO: Implement navigate to home
+              // TODO: Navigate to home
             },
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
-              // TODO: Implement info action
+              // TODO: Info action
             },
           ),
         ],
+        elevation: 2,
+        backgroundColor: Colors.indigo.shade700,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const SizedBox(height: 20),
-              // Instansi Dropdown
+            children: [
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Instansi',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo.shade400),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 value: _selectedInstansi,
                 hint: const Text('Pilih Instansi'),
+                icon: Icon(Icons.arrow_drop_down, color: Colors.indigo.shade400),
                 onChanged: (String? newValue) {
                   setState(() {
                     _selectedInstansi = newValue;
                   });
                 },
-                items: _instansiOptions.map<DropdownMenuItem<String>>((String value) {
+                items: _instansiOptions.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value),
+                    child: Text(value, style: const TextStyle(fontSize: 16)),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 20),
-              // Golongan TextField
+              const SizedBox(height: 22),
               TextField(
                 controller: _golonganController,
                 decoration: InputDecoration(
                   labelText: 'Golongan',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo.shade400),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 20),
-              // Jabatan TextField
+              const SizedBox(height: 22),
               TextField(
                 controller: _jabatanController,
                 decoration: InputDecoration(
                   labelText: 'Jabatan',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo.shade400),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 20),
-              // Rumus TextField
+              const SizedBox(height: 22),
               TextField(
                 controller: _rumusController,
                 decoration: InputDecoration(
                   labelText: 'Rumus',
-                  alignLabelWithHint: true, // Align hint text at the top
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  alignLabelWithHint: true,
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo.shade400),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                maxLines: 5, // Allow multiple lines for rumus
-                keyboardType: TextInputType.multiline, // Use multiline keyboard
+                maxLines: 5,
+                keyboardType: TextInputType.multiline,
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 40),
-              // Simpan Button
               Center(
                 child: ElevatedButton(
                   onPressed: _saveSimulasi,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo, // Dark blue color
-                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
+                    backgroundColor: Colors.indigo.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 5,
+                    shadowColor: Colors.indigo.shade300,
                   ),
                   child: const Text(
                     'Simpan',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),

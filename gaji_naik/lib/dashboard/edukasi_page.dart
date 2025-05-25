@@ -25,14 +25,12 @@ class _EdukasiPageState extends State<EdukasiPage> {
           IconButton(
             icon: const Icon(Icons.home),
             onPressed: () {
-              // Implement navigate to home
               Navigator.pushNamed(context, '/home');
             },
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
-              // Show information dialog
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
@@ -62,85 +60,63 @@ class _EdukasiPageState extends State<EdukasiPage> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = 'Tentang gaji dan Tunjangan';
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedFilter == 'Tentang gaji dan Tunjangan' ? Colors.deepPurple[300] : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      child: const Text('Tentang gaji dan Tunjangan'),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = 'Regulasi ASN';
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedFilter == 'Regulasi ASN' ? Colors.deepPurple[300] : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      child: const Text('Regulasi ASN'),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = 'Tips karier ASN';
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedFilter == 'Tips karier ASN' ? Colors.deepPurple[300] : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      child: const Text('Tips karier ASN'),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = 'Pengelolaan keuangan';
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedFilter == 'Pengelolaan keuangan' ? Colors.deepPurple[300] : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      child: const Text('Pengelolaan keuangan'),
-                    ),
+                    _buildFilterButton('Tentang gaji dan Tunjangan'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Regulasi ASN'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Tips karier ASN'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Pengelolaan keuangan'),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               TextField(
                 decoration: InputDecoration(
                   hintText: 'Cari materi edukasi',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide.none,
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey.shade400),
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _buildFilteredContent(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(String title) {
+    final bool isSelected = _selectedFilter == title;
+    return OutlinedButton(
+      onPressed: () {
+        setState(() {
+          _selectedFilter = title;
+        });
+      },
+      style: OutlinedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.deepPurple.shade300 : Colors.transparent,
+        side: BorderSide(
+          color: isSelected ? Colors.deepPurple.shade300 : Colors.grey.shade400,
+          width: 1.5,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.grey[700],
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          fontSize: 14,
         ),
       ),
     );
@@ -158,7 +134,7 @@ class _EdukasiPageState extends State<EdukasiPage> {
       case 'Pengelolaan keuangan':
         return _buildKeuanganContent();
       default:
-        return _buildDefaultContent();
+        return const SizedBox.shrink();
     }
   }
 
@@ -169,17 +145,18 @@ class _EdukasiPageState extends State<EdukasiPage> {
         const SizedBox(height: 20),
         Card(
           color: Colors.yellow[100],
-          elevation: 2.0,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: const Padding(
-            padding: EdgeInsets.all(12.0),
+            padding: EdgeInsets.all(16.0),
             child: Row(
               children: <Widget>[
-                Icon(Icons.info_outline, color: Colors.orange),
-                SizedBox(width: 10),
+                Icon(Icons.info_outline, color: Colors.orange, size: 28),
+                SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Materi baru : Panduan Gaji ASN 2025 telah tersedia!',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -196,15 +173,16 @@ class _EdukasiPageState extends State<EdukasiPage> {
       children: [
         const SizedBox(height: 20),
         Card(
-          elevation: 2.0,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
                   'Undang-Undang Nomor 5 Tahun 2014',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -225,15 +203,16 @@ class _EdukasiPageState extends State<EdukasiPage> {
       children: [
         const SizedBox(height: 20),
         Card(
-          elevation: 2.0,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
                   'Tips dan Trik Lulus CPNS',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -254,15 +233,16 @@ class _EdukasiPageState extends State<EdukasiPage> {
       children: [
         const SizedBox(height: 20),
         Card(
-          elevation: 2.0,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
                   'Perencanaan Keuangan Jangka Panjang untuk Pensiun',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -275,9 +255,5 @@ class _EdukasiPageState extends State<EdukasiPage> {
         ),
       ],
     );
-  }
-
-  Widget _buildDefaultContent() {
-    return const SizedBox.shrink(); // Default empty content
   }
 }

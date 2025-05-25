@@ -25,16 +25,17 @@ class _LaporanMasalahPageState extends State<LaporanMasalahPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laporan Masalah'),
+        title: const Text(
+          'Laporan Masalah',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.home),
+            icon: const Icon(Icons.home_outlined),
             onPressed: () {
               // TODO: Implement navigate to home
             },
@@ -46,40 +47,45 @@ class _LaporanMasalahPageState extends State<LaporanMasalahPage> {
             },
           ),
         ],
+        elevation: 2,
+        backgroundColor: Colors.amber,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Center(
+              Center(
                 child: Icon(
-                  Icons.warning,
+                  Icons.warning_amber_rounded,
                   size: 80,
-                  color: Colors.amber,
+                  color: Colors.amber.shade700,
                 ),
               ),
               const SizedBox(height: 16),
               const Center(
                 child: Text(
                   'Laporan Masalah',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 30),
               const Text(
                 'Kategori Masalah',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedKategoriMasalah,
                 hint: const Text('Pilih Kategori Masalah'),
                 items: kategoriMasalahOptions.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value),
+                    child: Text(value,
+                        style: const TextStyle(
+                          fontSize: 16,
+                        )),
                   );
                 }).toList(),
                 onChanged: (newValue) {
@@ -88,81 +94,99 @@ class _LaporanMasalahPageState extends State<LaporanMasalahPage> {
                   });
                 },
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Text(
                 'Deskripsi',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               TextField(
                 maxLines: 5,
                 decoration: InputDecoration(
                   hintText: 'Tuliskan deskripsi masalah Anda...',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
+                style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Text(
                 'Unggah Bukti (Opsional)',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles();
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles();
 
-                  if (result != null) {
-                    setState(() {
-                      selectedFile = result.files.first;
-                    });
-                    // You can now use selectedFile.path to access the file path
-                    print('Selected file: ${selectedFile!.name}');
-                  } else {
-                    // User canceled the picker
-                  }
-                },
-                icon: const Icon(Icons.attach_file),
-                label: const Text('Pilih File'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                      if (result != null) {
+                        setState(() {
+                          selectedFile = result.files.first;
+                        });
+                        print('Selected file: ${selectedFile!.name}');
+                      }
+                    },
+                    icon: const Icon(Icons.attach_file, color: Colors.black),
+                    label: const Text(
+                      'Pilih File',
+                      style: TextStyle(color: Colors.black, fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade700,
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: selectedFile != null
+                        ? Text(
+                            'File terpilih: ${selectedFile!.name}',
+                            style: const TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const Text(
+                            'Belum ada file dipilih',
+                            style: TextStyle(fontSize: 16, color: Colors.black54),
+                          ),
+                  ),
+                ],
               ),
-              if (selectedFile != null) // Display selected file name if available
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text('File terpilih: ${selectedFile!.name}'),
-                ),
-              const SizedBox(height: 30),
-
-             Center(
+              const SizedBox(height: 40),
+              Center(
                 child: ElevatedButton(
                   onPressed: () {
                     // Navigate to success page
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LaporanMasalahKonfirmasiPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const LaporanMasalahKonfirmasiPage()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
+                    backgroundColor: Colors.blue.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 90, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
+                    elevation: 5,
+                    shadowColor: Colors.blue.shade300,
                   ),
                   child: const Text(
                     'Kirim',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(fontSize: 20, color: Colors.white),
                   ),
                 ),
               ),

@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 
-class LaporanMasalahKonfirmasiPage extends StatelessWidget {
+class LaporanMasalahKonfirmasiPage extends StatefulWidget {
   const LaporanMasalahKonfirmasiPage({super.key});
+
+  @override
+  State<LaporanMasalahKonfirmasiPage> createState() =>
+      _LaporanMasalahKonfirmasiPageState();
+}
+
+class _LaporanMasalahKonfirmasiPageState
+    extends State<LaporanMasalahKonfirmasiPage> {
+  // Status proses laporan (true = masih proses, false = selesai)
+  bool isProcessing = true;
 
   @override
   Widget build(BuildContext context) {
@@ -10,76 +20,134 @@ class LaporanMasalahKonfirmasiPage extends StatelessWidget {
         title: const Text('Laporan Masalah'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.home),
             onPressed: () {
-              // TODO: Implement navigate to home
+              // TODO: Navigate to home
             },
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
-              // TODO: Implement info action
+              // TODO: Show info
             },
           ),
         ],
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              // Placeholder for clock icon - you might need a custom asset or a different approach for an animated clock
-              Image.asset(
-                'assets/clock_icon.png', // Replace with your clock icon asset path
-                width: 100,
-                height: 100,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Laporan Anda Sedang Di Proses',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
+              // Tampilkan logo sesuai status proses
+              isProcessing
+                  ? Column(
+                      children: [
+                        Image.asset(
+                          'assets/waiting_icon.png', // Logo menunggu/proses
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Laporan Anda Sedang Di Proses',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        Image.asset(
+                          'assets/completed_icon.png', // Logo selesai
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Laporan Anda Telah Selesai',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+              const SizedBox(height: 48),
               Card(
                 color: Colors.grey[300],
-                elevation: 2.0,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   child: Text(
-                    'TERIMA KASIH TELAH MELAPORKAN MASALAH ANDA',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                    isProcessing
+                        ? 'TERIMA KASIH TELAH MELAPORKAN MASALAH ANDA'
+                        : 'Masalah Anda Telah Ditangani dengan Baik',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[700],
+                      letterSpacing: 0.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement navigate to home
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.yellow,
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: 180,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: Navigate to home
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 6,
+                    shadowColor: Colors.amber.shade200,
+                    backgroundColor: Colors.yellow[700],
                   ),
-                ),
-                child: const Text(
-                  'HOME',
-                  style: TextStyle(fontSize: 18, color: Colors.black),
+                  child: const Text(
+                    'HOME',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        label: Text(isProcessing ? 'Tandai Selesai' : 'Tandai Proses'),
+        icon: Icon(isProcessing ? Icons.check_circle : Icons.pending),
+        onPressed: () {
+          setState(() {
+            isProcessing = !isProcessing;
+          });
+        },
       ),
     );
   }

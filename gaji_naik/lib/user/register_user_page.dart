@@ -23,105 +23,128 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   }
 
   void _registerUser() {
-    // TODO: Implement user registration logic here
     String nik = _nikController.text;
     String telepon = _teleponController.text;
     String email = _emailController.text;
     String password = _passwordController.text;
     print('User registration attempt with NIK: $nik, Telepon: $telepon, Email: $email, Password: $password');
-    // Add your registration logic (e.g., call an API)
+    // Tambahkan logika registrasi sesuai kebutuhan
+  }
+
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.grey),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: const Color.fromARGB(255, 10, 31, 164), width: 2),
+      ),
+      enabledBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.grey, width: 1),
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 10, 31, 164),
+      backgroundColor: Colors.white, // Background putih bersih
       appBar: AppBar(
         title: const Text('Register User'),
+        backgroundColor: const Color.fromARGB(255, 10, 31, 164),
+        elevation: 2,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Image.asset('assets/logoGajiNaik.png', height: 100),
-              const SizedBox(height: 40),
-              // NIP/NIK TextField
-              TextField(
-                controller: _nikController,
-                decoration: InputDecoration(
-                  labelText: 'NIP/NIK',
-                  labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.8), // Slightly transparent background
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Nomor Telepon TextField
-              TextField(
-                controller: _teleponController,
-                decoration: InputDecoration(
-                  labelText: 'Nomor Telepon',
-                  labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.8), // Slightly transparent background
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                ),
-                keyboardType: TextInputType.phone, // Set keyboard type to phone
-              ),
-              const SizedBox(height: 20),
-              // Email TextField
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.8), // Slightly transparent background
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                ),
-                keyboardType: TextInputType.emailAddress, // Set keyboard type to email
-              ),
-              const SizedBox(height: 20),
-              // Password TextField
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.8), // Slightly transparent background
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Logo
+            Image.asset(
+              'assets/logoGajiNaik.png',
+              height: 120,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 40),
+
+            // NIK
+            TextField(
+              controller: _nikController,
+              decoration: _buildInputDecoration('NIP/NIK'),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 24),
+
+            // Telepon
+            TextField(
+              controller: _teleponController,
+              decoration: _buildInputDecoration('Nomor Telepon'),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 24),
+
+            // Email
+            TextField(
+              controller: _emailController,
+              decoration: _buildInputDecoration('Email'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 24),
+
+            // Password
+            TextField(
+              controller: _passwordController,
+              decoration: _buildInputDecoration('Password'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 36),
+
+            // Tombol Daftar dengan gradasi dan shadow
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
                 onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 6,
+                  shadowColor: Colors.blue.shade200,
+                  backgroundColor:const Color.fromARGB(255, 10, 31, 164), // fallback warna bila gradien tidak didukung
+                ).copyWith(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+                    (states) => null,
+                  ),
+                  elevation: MaterialStateProperty.all(0),
+                  padding: MaterialStateProperty.all(const EdgeInsets.all(0)),
+                ),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [const Color.fromARGB(255, 10, 31, 164), Color(0xFF42A5F5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Container(
+                    alignment: Alignment.center,
+                    height: 50,
+                    child: const Text(
+                      'Daftar',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text('Daftar'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
