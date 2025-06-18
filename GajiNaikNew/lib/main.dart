@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
             seedColor: const Color(0xFF1565C0)), // Warna tema yang konsisten
         useMaterial3: true,
         // Tambahan tema untuk konsistensi UI
-        appBarTheme: const AppBarTheme( 
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1565C0),
           foregroundColor: Colors.white,
           elevation: 0,
