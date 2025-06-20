@@ -14,6 +14,11 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
   String? _selectedKategori;
   bool _isLoading = false;
 
+  // Pangkat management
+  final List<Map<String, String>> _pangkatList = [];
+  final TextEditingController _namaPangkatController = TextEditingController();
+  final TextEditingController _kodePangkatController = TextEditingController();
+
   final List<String> _kategoriOptions = ['Pusat', 'Daerah'];
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -21,7 +26,77 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
   void dispose() {
     _namaInstansiController.dispose();
     _tingkatanController.dispose();
+    _namaPangkatController.dispose();
+    _kodePangkatController.dispose();
     super.dispose();
+  }
+
+  void _addPangkat() {
+    if (_namaPangkatController.text.isEmpty ||
+        _kodePangkatController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mohon lengkapi nama pangkat dan kode pangkat'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Parse kode pangkat untuk mendapatkan golongan dan ruang
+    String kodePangkat = _kodePangkatController.text.trim().toUpperCase();
+    String golongan = '';
+    String ruang = '';
+
+    // Format yang diharapkan: III/a, IV/b, I/c, dll
+    if (kodePangkat.contains('/') && kodePangkat.length >= 3) {
+      List<String> parts = kodePangkat.split('/');
+      if (parts.length == 2) {
+        golongan = parts[0].trim();
+        ruang = parts[1].trim();
+      }
+    }
+
+    setState(() {
+      _pangkatList.add({
+        'nama_pangkat': _namaPangkatController.text.trim(),
+        'kode_pangkat': kodePangkat,
+        'golongan': golongan,
+        'ruang': ruang,
+      });
+    });
+
+    // Clear form
+    _namaPangkatController.clear();
+    _kodePangkatController.clear();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Pangkat berhasil ditambahkan ke list'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _removePangkat(int index) {
+    setState(() {
+      _pangkatList.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Pangkat dihapus dari list'),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _saveInstansi() async {
@@ -30,7 +105,17 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
         _selectedKategori == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mohon lengkapi semua field'),
+          content: Text('Mohon lengkapi semua field instansi'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_pangkatList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Minimal tambahkan 1 pangkat untuk instansi ini'),
           backgroundColor: Colors.red,
         ),
       );
@@ -67,7 +152,7 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
         return;
       }
 
-      // Create instansi document
+      // Create instansi document first
       Map<String, dynamic> instansiData = {
         'nama_instansi': namaInstansi,
         'tingkatan': tingkatan,
@@ -77,15 +162,43 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
         'status': 'aktif',
       };
 
-      // Save to Firebase Firestore
-      DocumentReference docRef =
+      // Save instansi to Firebase Firestore
+      DocumentReference instansiRef =
           await _firestore.collection('instansi').add(instansiData);
+      String instansiId = instansiRef.id;
 
-      print('Instansi saved successfully with ID: ${docRef.id}');
+      print('Instansi saved successfully with ID: $instansiId');
+
+      // Save all pangkat for this instansi
+      WriteBatch batch = _firestore.batch();
+
+      for (int i = 0; i < _pangkatList.length; i++) {
+        Map<String, String> pangkat = _pangkatList[i];
+
+        Map<String, dynamic> pangkatData = {
+          'instansi_id': instansiId,
+          'nama_pangkat': pangkat['nama_pangkat'],
+          'kode_pangkat': pangkat['kode_pangkat'],
+          'golongan': pangkat['golongan'],
+          'ruang': pangkat['ruang'],
+          'urutan': i + 1, // untuk sorting
+          'status': 'aktif',
+          'created_at': FieldValue.serverTimestamp(),
+        };
+
+        DocumentReference pangkatRef = _firestore.collection('pangkat').doc();
+        batch.set(pangkatRef, pangkatData);
+      }
+
+      // Execute batch write for all pangkat
+      await batch.commit();
+
+      print('All pangkat saved successfully');
       print('Instansi data:');
       print('  Nama Instansi: $namaInstansi');
       print('  Tingkatan: $tingkatan');
       print('  Kategori: $kategori');
+      print('  Total Pangkat: ${_pangkatList.length}');
 
       setState(() {
         _isLoading = false;
@@ -98,11 +211,15 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
             children: [
               const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 8),
-              Text('Instansi "$namaInstansi" berhasil ditambahkan'),
+              Expanded(
+                child: Text(
+                  'Instansi "$namaInstansi" dan ${_pangkatList.length} pangkat berhasil ditambahkan',
+                ),
+              ),
             ],
           ),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
         ),
       );
 
@@ -111,13 +228,14 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
       _tingkatanController.clear();
       setState(() {
         _selectedKategori = null;
+        _pangkatList.clear();
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
-      print('Error saving instansi: $e');
+      print('Error saving instansi and pangkat: $e');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -309,7 +427,7 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
                                   ),
                                   SizedBox(height: 4),
                                   Text(
-                                    'Lengkapi informasi instansi yang akan ditambahkan ke database',
+                                    'Lengkapi informasi instansi dan daftar pangkat yang akan ditambahkan',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.black54,
@@ -325,7 +443,7 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
 
                       const SizedBox(height: 30),
 
-                      // Form Section
+                      // Form Section - Instansi
                       const Text(
                         'Informasi Instansi',
                         style: TextStyle(
@@ -402,7 +520,7 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
                             fillColor: Colors.transparent,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16),
-                            hintText: 'Contoh: Eselon I, II, III, IV',
+                            hintText: 'Contoh: Pendidik, ASN, TNI, Polri',
                           ),
                         ),
                       ),
@@ -464,6 +582,269 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
                           },
                         ),
                       ),
+
+                      const SizedBox(height: 40),
+
+                      // Pangkat Section
+                      const Text(
+                        'Daftar Pangkat',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Add Pangkat Form
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white.withOpacity(0.95),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.badge, color: Colors.green),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Tambah Pangkat',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Nama Pangkat Field
+                            TextField(
+                              controller: _namaPangkatController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Pangkat',
+                                hintText: 'Contoh: Penata Muda',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Kode Pangkat Field dengan tombol Add
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _kodePangkatController,
+                                    textCapitalization:
+                                        TextCapitalization.characters,
+                                    decoration: InputDecoration(
+                                      labelText: 'Kode Pangkat',
+                                      hintText: 'Format: III/a, IV/b, I/c',
+                                      helperText:
+                                          'Contoh: III/a (Golongan III, Ruang a)',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton(
+                                  onPressed: _addPangkat,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.all(16),
+                                  ),
+                                  child: const Icon(Icons.add),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Info text
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.blue.withOpacity(0.3),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.blue,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Format kode: Golongan/Ruang (contoh: III/a, IV/b)',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Pangkat List
+                      if (_pangkatList.isNotEmpty) ...[
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.white.withOpacity(0.95),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.list, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Daftar Pangkat (${_pangkatList.length})',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ...List.generate(_pangkatList.length, (index) {
+                                Map<String, String> pangkat =
+                                    _pangkatList[index];
+                                return Container(
+                                  margin: const EdgeInsets.only(
+                                      left: 20, right: 20, bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.grey.shade50,
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              pangkat['nama_pangkat']!,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              pangkat['kode_pangkat']!,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (pangkat['golongan']!
+                                                    .isNotEmpty &&
+                                                pangkat['ruang']!
+                                                    .isNotEmpty) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Golongan ${pangkat['golongan']}, Ruang ${pangkat['ruang']}',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade500,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => _removePangkat(index),
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red, size: 20),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor:
+                                              Colors.red.withOpacity(0.1),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 40),
 
@@ -555,7 +936,7 @@ class _AddInstansiPageState extends State<AddInstansiPage> {
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Data akan disimpan ke Firebase Firestore dan dapat digunakan untuk mengelola gaji pegawai.',
+                                'Data instansi dan pangkat akan disimpan ke Firebase Firestore dan dapat digunakan untuk simulasi gaji.',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,

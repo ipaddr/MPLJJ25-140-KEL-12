@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EdukasiPage extends StatefulWidget {
   const EdukasiPage({Key? key}) : super(key: key);
@@ -9,6 +10,271 @@ class EdukasiPage extends StatefulWidget {
 
 class _EdukasiPageState extends State<EdukasiPage> {
   String? _selectedFilter;
+  List<Map<String, dynamic>> _educationMaterials = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEducationMaterials();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Load materi edukasi dari Firebase
+  void _loadEducationMaterials() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Ambil semua data materi edukasi terlebih dahulu
+      QuerySnapshot snapshot =
+          await _firestore.collection('education_materials').get();
+
+      List<Map<String, dynamic>> materialsData = [];
+
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Filter hanya yang status aktif di client side
+        if (data['status'] == 'Aktif') {
+          materialsData.add({
+            'id': doc.id,
+            'title': data['title'] ?? 'Tanpa Judul',
+            'description': data['description'] ?? 'Tidak ada deskripsi',
+            'category': data['category'] ?? 'Umum',
+            'content': data['content'] ?? '',
+            'views': data['views'] ?? 0,
+            'created_at': data['created_at'],
+            'image_url': data['image_url'] ?? '',
+            'video_url': data['video_url'] ?? '',
+          });
+        }
+      }
+
+      // Sort di client side berdasarkan created_at (terbaru dulu)
+      materialsData.sort((a, b) {
+        if (a['created_at'] == null && b['created_at'] == null) return 0;
+        if (a['created_at'] == null) return 1;
+        if (b['created_at'] == null) return -1;
+
+        Timestamp timestampA = a['created_at'] as Timestamp;
+        Timestamp timestampB = b['created_at'] as Timestamp;
+        return timestampB.compareTo(timestampA);
+      });
+
+      setState(() {
+        _educationMaterials = materialsData;
+        _isLoading = false;
+      });
+
+      print('Loaded ${_educationMaterials.length} active education materials');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      print('Error loading education materials: $e');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat materi edukasi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Increment views when material is clicked
+  Future<void> _incrementViews(String materialId) async {
+    try {
+      await _firestore
+          .collection('education_materials')
+          .doc(materialId)
+          .update({
+        'views': FieldValue.increment(1),
+      });
+
+      // Update local data
+      setState(() {
+        final material =
+            _educationMaterials.firstWhere((m) => m['id'] == materialId);
+        material['views'] = (material['views'] ?? 0) + 1;
+      });
+    } catch (e) {
+      print('Error incrementing views: $e');
+    }
+  }
+
+  // Show material detail
+  void _showMaterialDetail(Map<String, dynamic> material) {
+    _incrementViews(material['id']);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(_getCategoryIcon(material['category']),
+                  color: _getCategoryColor(material['category'])),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  material['title'],
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getCategoryColor(material['category'])
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    material['category'],
+                    style: TextStyle(
+                      color: _getCategoryColor(material['category']),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  material['description'],
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+                ),
+                if (material['content'].isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Konten:',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    material['content'],
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(Icons.visibility, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${material['views']} views',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Filter materials based on category and search
+  List<Map<String, dynamic>> get _filteredMaterials {
+    List<Map<String, dynamic>> filtered = _educationMaterials;
+
+    // Filter by category
+    if (_selectedFilter != null) {
+      filtered = filtered.where((material) {
+        return material['category'] == _selectedFilter;
+      }).toList();
+    }
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((material) {
+        return material['title']
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            material['description']
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    return filtered;
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Tentang gaji dan Tunjangan':
+        return Colors.blue;
+      case 'Regulasi ASN':
+        return Colors.purple;
+      case 'Tips karier ASN':
+        return Colors.green;
+      case 'Pengelolaan keuangan':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Tentang gaji dan Tunjangan':
+        return Icons.payment;
+      case 'Regulasi ASN':
+        return Icons.gavel;
+      case 'Tips karier ASN':
+        return Icons.trending_up;
+      case 'Pengelolaan keuangan':
+        return Icons.account_balance_wallet;
+      default:
+        return Icons.article;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +351,17 @@ class _EdukasiPageState extends State<EdukasiPage> {
                         color: Colors.white.withOpacity(0.1),
                       ),
                       child: IconButton(
+                        icon: const Icon(Icons.refresh, color: Colors.white),
+                        onPressed: _loadEducationMaterials,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                      child: IconButton(
                         icon: const Icon(Icons.home, color: Colors.white),
                         onPressed: () => Navigator.popUntil(
                             context, (route) => route.isFirst),
@@ -130,11 +407,11 @@ class _EdukasiPageState extends State<EdukasiPage> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Pusat Edukasi ASN',
                                     style: TextStyle(
                                       fontSize: 20,
@@ -142,10 +419,10 @@ class _EdukasiPageState extends State<EdukasiPage> {
                                       color: Colors.black87,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    'Tingkatkan pengetahuan dan keterampilan Anda sebagai ASN',
-                                    style: TextStyle(
+                                    'Tingkatkan pengetahuan dan keterampilan Anda sebagai ASN\n${_educationMaterials.length} materi tersedia',
+                                    style: const TextStyle(
                                       fontSize: 14,
                                       color: Colors.black54,
                                       height: 1.3,
@@ -174,11 +451,29 @@ class _EdukasiPageState extends State<EdukasiPage> {
                           ],
                         ),
                         child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
                           decoration: InputDecoration(
                             hintText: 'Cari materi edukasi...',
                             hintStyle: TextStyle(color: Colors.grey[600]),
                             prefixIcon: const Icon(Icons.search,
                                 color: Color(0xFF1565C0)),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear,
+                                        color: Colors.grey),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -226,7 +521,24 @@ class _EdukasiPageState extends State<EdukasiPage> {
                       const SizedBox(height: 30),
 
                       // Content
-                      _buildFilteredContent(),
+                      _isLoading
+                          ? Container(
+                              padding: const EdgeInsets.all(40),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.white.withOpacity(0.95),
+                              ),
+                              child: const Center(
+                                child: Column(
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(height: 16),
+                                    Text('Memuat materi edukasi...'),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : _buildMaterialsList(),
                     ],
                   ),
                 ),
@@ -283,162 +595,105 @@ class _EdukasiPageState extends State<EdukasiPage> {
     );
   }
 
-  Widget _buildFilteredContent() {
-    switch (_selectedFilter) {
-      case 'Tentang gaji dan Tunjangan':
-      case null:
-        return _buildGajiAndTunjanganContent();
-      case 'Regulasi ASN':
-        return _buildRegulasiContent();
-      case 'Tips karier ASN':
-        return _buildTipsKarierContent();
-      case 'Pengelolaan keuangan':
-        return _buildKeuanganContent();
-      default:
-        return const SizedBox.shrink();
+  Widget _buildMaterialsList() {
+    final filteredMaterials = _filteredMaterials;
+
+    if (filteredMaterials.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.95),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                _searchQuery.isNotEmpty || _selectedFilter != null
+                    ? Icons.search_off
+                    : Icons.school_outlined,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _searchQuery.isNotEmpty || _selectedFilter != null
+                    ? 'Tidak ada materi yang sesuai'
+                    : 'Belum ada materi edukasi',
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_searchQuery.isNotEmpty || _selectedFilter != null) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                      _selectedFilter = null;
+                    });
+                  },
+                  child: const Text('Hapus Filter'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
     }
-  }
 
-  Widget _buildGajiAndTunjanganContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Gaji dan Tunjangan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _selectedFilter ?? 'Semua Materi',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              '${filteredMaterials.length} materi',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Panduan Gaji ASN 2025',
-          description: 'Pelajari sistem gaji terbaru untuk ASN tahun 2025',
-          icon: Icons.payments,
-          color: Colors.blue,
-          isNew: true,
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Tunjangan Kinerja',
-          description: 'Memahami mekanisme pemberian tunjangan kinerja',
-          icon: Icons.trending_up,
-          color: Colors.green,
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Struktur Gaji PNS',
-          description: 'Komponen-komponen dalam struktur gaji PNS',
-          icon: Icons.account_balance,
-          color: Colors.orange,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRegulasiContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Regulasi ASN',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'UU No. 5 Tahun 2014',
-          description: 'Undang-Undang tentang Aparatur Sipil Negara',
-          icon: Icons.gavel,
-          color: Colors.purple,
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'PP Sistem Remunerasi',
-          description: 'Peraturan Pemerintah tentang Sistem Remunerasi ASN',
-          icon: Icons.description,
-          color: Colors.indigo,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTipsKarierContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tips Karier ASN',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Tips Lulus CPNS',
-          description: 'Strategi sukses menghadapi seleksi CPNS',
-          icon: Icons.school,
-          color: Colors.teal,
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Pengembangan Kompetensi',
-          description:
-              'Meningkatkan kompetensi untuk jenjang karier yang lebih baik',
-          icon: Icons.emoji_events,
-          color: Colors.amber,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildKeuanganContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Pengelolaan Keuangan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Perencanaan Pensiun',
-          description:
-              'Strategi perencanaan keuangan untuk pensiun yang nyaman',
-          icon: Icons.savings,
-          color: Colors.green,
-        ),
-        const SizedBox(height: 16),
-        _buildEducationCard(
-          title: 'Investasi untuk ASN',
-          description:
-              'Panduan investasi yang aman dan menguntungkan untuk ASN',
-          icon: Icons.show_chart,
-          color: Colors.blue,
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: filteredMaterials.length,
+          itemBuilder: (context, index) {
+            final material = filteredMaterials[index];
+            return _buildEducationCard(
+              material: material,
+              onTap: () => _showMaterialDetail(material),
+            );
+          },
         ),
       ],
     );
   }
 
   Widget _buildEducationCard({
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    bool isNew = false,
+    required Map<String, dynamic> material,
+    required VoidCallback onTap,
   }) {
+    final color = _getCategoryColor(material['category']);
+    final icon = _getCategoryIcon(material['category']);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white.withOpacity(0.95),
@@ -450,81 +705,104 @@ class _EdukasiPageState extends State<EdukasiPage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    if (isNew)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'BARU',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            material['title'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            material['category'],
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      material['description'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.3,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.visibility,
+                            size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${material['views']} views',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    height: 1.3,
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  color: color,
+                  size: 16,
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.arrow_forward_ios,
-              color: color,
-              size: 16,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
